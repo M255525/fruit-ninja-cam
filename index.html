@@ -1,0 +1,801 @@
+<!DOCTYPE html>
+<html lang="zh-Hant">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0, user-scalable=no">
+<title>體感切水果</title>
+<link rel="icon" href="data:image/svg+xml,<svg xmlns=%22http://www.w3.org/2000/svg%22 viewBox=%220 0 100 100%22><text y=%22.9em%22 font-size=%2290%22>🍉</text></svg>">
+<style>
+  * { margin: 0; padding: 0; box-sizing: border-box; }
+  html, body { width: 100%; height: 100%; overflow: hidden; background: #0b1020; font-family: "Microsoft JhengHei", "Noto Sans TC", sans-serif; }
+  #app { position: fixed; inset: 0; }
+  /* 鏡像顯示攝影機畫面，object-fit: cover 滿版 */
+  #cam {
+    position: absolute; inset: 0; width: 100%; height: 100%;
+    object-fit: cover; transform: scaleX(-1);
+    background: #0b1020; display: none;
+  }
+  #cam.on { display: block; }
+  #veil { position: absolute; inset: 0; background: rgba(5, 10, 30, 0.35); pointer-events: none; display: none; }
+  #veil.on { display: block; }
+  #game { position: absolute; inset: 0; width: 100%; height: 100%; touch-action: none; cursor: crosshair; }
+
+  /* ===== HUD ===== */
+  #hud { position: absolute; inset: 0; pointer-events: none; display: none; }
+  #hud.on { display: block; }
+  .hud-left { position: absolute; top: 14px; left: 18px; color: #fff; text-shadow: 0 2px 8px rgba(0,0,0,.8); }
+  #score { font-size: 40px; font-weight: 900; line-height: 1; }
+  #best-inline { font-size: 14px; opacity: .85; margin-top: 4px; }
+  #lives { position: absolute; top: 16px; right: 18px; font-size: 30px; letter-spacing: 4px; filter: drop-shadow(0 2px 6px rgba(0,0,0,.8)); }
+  #lives .lost { opacity: .25; filter: grayscale(1); }
+  #level-info {
+    position: absolute; top: 16px; left: 50%; transform: translateX(-50%);
+    display: flex; gap: 16px; align-items: baseline; color: #fff;
+    font-size: 22px; font-weight: 700; text-shadow: 0 2px 8px rgba(0,0,0,.8);
+  }
+  #level-time { font-variant-numeric: tabular-nums; }
+  #level-banner {
+    position: absolute; top: 50%; left: 50%; transform: translate(-50%, -50%) scale(.6);
+    font-size: clamp(44px, 9vw, 84px); font-weight: 900; letter-spacing: 10px; color: #ffd27a;
+    text-shadow: 0 6px 30px rgba(255,150,50,.6), 0 2px 8px rgba(0,0,0,.9);
+    opacity: 0; pointer-events: none; white-space: nowrap;
+  }
+  #level-banner.show { animation: banner 2s ease forwards; }
+  @keyframes banner {
+    0% { opacity: 0; transform: translate(-50%, -50%) scale(.6); }
+    15% { opacity: 1; transform: translate(-50%, -50%) scale(1.08); }
+    25% { transform: translate(-50%, -50%) scale(1); }
+    80% { opacity: 1; }
+    100% { opacity: 0; transform: translate(-50%, -50%) scale(1); }
+  }
+  #mode-badge {
+    position: absolute; bottom: 14px; left: 50%; transform: translateX(-50%);
+    color: #fff; background: rgba(0,0,0,.45); border: 1px solid rgba(255,255,255,.25);
+    padding: 5px 14px; border-radius: 999px; font-size: 13px; backdrop-filter: blur(4px);
+  }
+
+  /* ===== 覆蓋畫面（開始 / 結算） ===== */
+  .screen {
+    position: absolute; inset: 0; display: flex; flex-direction: column;
+    align-items: center; justify-content: center; gap: 18px; text-align: center;
+    color: #fff; background: radial-gradient(ellipse at 50% 30%, #1b2a55 0%, #0b1020 70%);
+    z-index: 10; padding: 24px;
+  }
+  .screen.hidden { display: none; }
+  #gameover-screen { background: rgba(8, 12, 30, .82); backdrop-filter: blur(6px); }
+  .title { font-size: clamp(38px, 8vw, 72px); font-weight: 900; letter-spacing: 6px;
+           text-shadow: 0 4px 24px rgba(255,120,50,.5); }
+  .title .knife { display: inline-block; transform: rotate(-15deg); }
+  .subtitle { font-size: clamp(15px, 2.5vw, 19px); opacity: .9; line-height: 1.9; max-width: 560px; }
+  .fruit-row { font-size: clamp(28px, 6vw, 44px); letter-spacing: 10px; }
+  .btn {
+    font-family: inherit; font-size: 22px; font-weight: 700; color: #fff;
+    background: linear-gradient(135deg, #ff7a2f, #e8452c); border: none; border-radius: 999px;
+    padding: 16px 52px; cursor: pointer; letter-spacing: 4px;
+    box-shadow: 0 6px 24px rgba(232,69,44,.45); transition: transform .12s;
+  }
+  .btn:hover { transform: scale(1.06); }
+  .btn.secondary { background: rgba(255,255,255,.12); border: 1px solid rgba(255,255,255,.3);
+                   font-size: 15px; padding: 10px 28px; box-shadow: none; }
+  .picker { font-size: 15px; color: #fff; display: flex; align-items: center; gap: 8px; }
+  .picker.hidden { display: none; }
+  .picker select {
+    font-family: inherit; font-size: 15px; color: #fff; max-width: min(340px, 70vw);
+    background: rgba(255,255,255,.1); border: 1px solid rgba(255,255,255,.35);
+    border-radius: 8px; padding: 7px 10px; cursor: pointer;
+  }
+  .picker select option { color: #000; }
+  #loading-msg { font-size: 16px; color: #ffd27a; min-height: 24px; }
+  #loading-msg .spin { display: inline-block; animation: spin 1s linear infinite; }
+  @keyframes spin { to { transform: rotate(360deg); } }
+  #final-score { font-size: clamp(56px, 12vw, 100px); font-weight: 900; color: #ffd27a; line-height: 1; }
+  #final-best { font-size: 18px; opacity: .9; }
+  #final-best.new-record { color: #ffe066; font-weight: 700; }
+
+  /* 炸彈爆炸震屏 */
+  @keyframes shake {
+    0%,100% { transform: translate(0,0); } 20% { transform: translate(-14px,8px); }
+    40% { transform: translate(12px,-10px); } 60% { transform: translate(-9px,-6px); }
+    80% { transform: translate(7px,9px); }
+  }
+  #app.shake { animation: shake .45s; }
+  #flash { position: absolute; inset: 0; background: #fff; opacity: 0; pointer-events: none; z-index: 5; }
+  #flash.boom { animation: boom .45s; }
+  @keyframes boom { 0% { opacity: .9; } 100% { opacity: 0; } }
+</style>
+</head>
+<body>
+<div id="app">
+  <video id="cam" autoplay playsinline muted></video>
+  <div id="veil"></div>
+  <canvas id="game"></canvas>
+  <div id="flash"></div>
+
+  <div id="hud">
+    <div class="hud-left">
+      <div id="score">0</div>
+      <div id="best-inline">最高分 0</div>
+    </div>
+    <div id="lives"></div>
+    <div id="level-info"><span id="level-num"></span><span id="level-time"></span></div>
+    <div id="level-banner"></div>
+    <div id="mode-badge"></div>
+  </div>
+
+  <div id="start-screen" class="screen">
+    <div class="title"><span class="knife">🔪</span> 體感切水果</div>
+    <div class="fruit-row">🍉 🍎 🍊 🍌 🍓 🥝 🍑</div>
+    <div class="subtitle">
+      對著鏡頭<b>揮動食指</b>，指尖就是你的刀鋒！<br>
+      快速劃過水果就能切開，一刀多顆有 Combo 加分。<br>
+      共 <b>3 關</b>（第 1 關 60 秒、之後每關 45 秒），難度一關比一關高；撐完三關就勝利！<br>
+      小心 💣 炸彈！切到炸彈或漏接水果都會扣 ❤️（共 5 顆，過關回復 1 顆）。
+    </div>
+    <button id="start-btn" class="btn">開始遊戲</button>
+    <div id="cam-picker" class="picker hidden">
+      <label for="cam-select">📷 鏡頭：</label><select id="cam-select"></select>
+    </div>
+    <button id="mouse-btn" class="btn secondary">改用滑鼠／觸控玩 🖱️</button>
+    <div id="loading-msg"></div>
+  </div>
+
+  <div id="gameover-screen" class="screen hidden">
+    <div id="gameover-emoji" style="font-size:52px">🏁</div>
+    <div id="gameover-title" style="font-size:30px;font-weight:900;letter-spacing:6px">遊戲結束</div>
+    <div id="final-score">0</div>
+    <div id="final-best"></div>
+    <button id="restart-btn" class="btn">再玩一次</button>
+    <button id="menu-btn" class="btn secondary">回主選單（可換鏡頭）</button>
+  </div>
+</div>
+
+<script type="module">
+/* ============================================================
+ * 體感切水果 — MediaPipe HandLandmarker 指尖刀鋒
+ * 單檔遊戲：攝影機不可用時自動退回滑鼠／觸控模式
+ * ============================================================ */
+
+const $ = id => document.getElementById(id);
+const app = $('app'), video = $('cam'), canvas = $('game'), ctx = canvas.getContext('2d');
+
+const CDN = 'https://cdn.jsdelivr.net/npm/@mediapipe/tasks-vision@0.10.14';
+const MODEL_URL = 'https://storage.googleapis.com/mediapipe-models/hand_landmarker/hand_landmarker/float16/1/hand_landmarker.task';
+
+const FRUITS = [
+  { emoji: '🍉', juice: '#ff5a5a' }, { emoji: '🍎', juice: '#ff6b6b' },
+  { emoji: '🍊', juice: '#ffa235' }, { emoji: '🍌', juice: '#ffe066' },
+  { emoji: '🍓', juice: '#ff4d6d' }, { emoji: '🥝', juice: '#8bd450' },
+  { emoji: '🍑', juice: '#ffb08a' },
+];
+/* 三關制：每關 45 秒，難度逐關遞增（生成間隔、每波顆數、炸彈機率） */
+const LEVELS = [
+  { name: '第 1 關', time: 60, spawnGap: 2.6, waveMin: 2, waveMax: 3, bomb: 0.05 },
+  { name: '第 2 關', time: 45, spawnGap: 1.9, waveMin: 3, waveMax: 5, bomb: 0.12 },
+  { name: '第 3 關', time: 45, spawnGap: 1.35, waveMin: 4, waveMax: 6, bomb: 0.18 },
+];
+const MIN_FRUITS_PER_LEVEL = 50;   // 每關至少拋出的水果顆數（不含炸彈）
+const MAX_LIVES = 5;   // 每波水果變多後漏接難免，5 命＋過關回復 1 命較合理
+const SLICE_SPEED = 400;      // px/s，低於此速度的移動不算「揮刀」（調低＝更靈敏）
+const TRAIL_MAX = 12;
+const GRAVITY = 1350;         // px/s^2
+
+/* ---------- 遊戲狀態 ---------- */
+const G = {
+  state: 'start',             // start | playing | gameover
+  mode: 'none',               // cam | mouse
+  score: 0, best: +(localStorage.getItem('fnc-best') || 0),
+  lives: MAX_LIVES,
+  fruits: [], halves: [], particles: [], floaters: [],
+  blades: new Map(),          // key -> { trail:[{x,y,t}], lastSliceT, swipeCount }
+  elapsed: 0, spawnTimer: 1.2, spawnCount: 0,
+  level: 0, levelTime: 0, bannerTime: 0, levelSpawned: 0,   // 三關制
+};
+window.__game = G;            // 供自動化測試檢查
+
+/* ---------- HUD ---------- */
+function renderHUD() {
+  $('score').textContent = G.score;
+  $('best-inline').textContent = '最高分 ' + G.best;
+  $('lives').innerHTML = Array.from({ length: MAX_LIVES },
+    (_, i) => `<span class="${i < MAX_LIVES - G.lives ? 'lost' : ''}">❤️</span>`).reverse().join('');
+  $('level-num').textContent = LEVELS[G.level] ? LEVELS[G.level].name : '';
+}
+
+let lastShownSec = -1;
+function renderTimer() {
+  const sec = Math.max(0, Math.ceil(G.levelTime));
+  if (sec !== lastShownSec) {
+    lastShownSec = sec;
+    $('level-time').textContent = '⏱ ' + sec;
+    $('level-time').style.color = sec <= 10 ? '#ff8a8a' : '#fff';
+  }
+}
+
+function showBanner(text) {
+  G.bannerTime = 2.0;          // 顯示期間暫停生成與倒數
+  const b = $('level-banner');
+  b.textContent = text;
+  b.classList.remove('show'); void b.offsetWidth; b.classList.add('show');
+}
+
+/* ---------- 音效（WebAudio 合成，零外部音檔） ---------- */
+let AC = null;
+function audio() { if (!AC) AC = new (window.AudioContext || window.webkitAudioContext)(); return AC; }
+function sfxSlice() {
+  try {
+    const ac = audio(), t = ac.currentTime;
+    const buf = ac.createBuffer(1, ac.sampleRate * 0.15, ac.sampleRate);
+    const d = buf.getChannelData(0);
+    for (let i = 0; i < d.length; i++) d[i] = (Math.random() * 2 - 1) * (1 - i / d.length);
+    const src = ac.createBufferSource(); src.buffer = buf;
+    const bp = ac.createBiquadFilter(); bp.type = 'bandpass'; bp.Q.value = 1.2;
+    bp.frequency.setValueAtTime(2600, t); bp.frequency.exponentialRampToValueAtTime(600, t + 0.13);
+    const g = ac.createGain(); g.gain.setValueAtTime(0.5, t); g.gain.exponentialRampToValueAtTime(0.001, t + 0.15);
+    src.connect(bp).connect(g).connect(ac.destination); src.start();
+  } catch (e) {}
+}
+function sfxBomb() {
+  try {
+    const ac = audio(), t = ac.currentTime;
+    const o = ac.createOscillator(); o.type = 'sawtooth';
+    o.frequency.setValueAtTime(160, t); o.frequency.exponentialRampToValueAtTime(35, t + 0.5);
+    const g = ac.createGain(); g.gain.setValueAtTime(0.7, t); g.gain.exponentialRampToValueAtTime(0.001, t + 0.55);
+    o.connect(g).connect(ac.destination); o.start(); o.stop(t + 0.6);
+  } catch (e) {}
+}
+function sfxCombo(n) {
+  try {
+    const ac = audio(), t = ac.currentTime;
+    [523, 659, 784, 1047].slice(0, Math.min(4, n)).forEach((f, i) => {
+      const o = ac.createOscillator(); o.type = 'triangle'; o.frequency.value = f;
+      const g = ac.createGain(); g.gain.setValueAtTime(0.25, t + i * 0.07);
+      g.gain.exponentialRampToValueAtTime(0.001, t + i * 0.07 + 0.18);
+      o.connect(g).connect(ac.destination); o.start(t + i * 0.07); o.stop(t + i * 0.07 + 0.2);
+    });
+  } catch (e) {}
+}
+function sfxMiss() {
+  try {
+    const ac = audio(), t = ac.currentTime;
+    const o = ac.createOscillator(); o.type = 'sine';
+    o.frequency.setValueAtTime(330, t); o.frequency.exponentialRampToValueAtTime(150, t + 0.3);
+    const g = ac.createGain(); g.gain.setValueAtTime(0.3, t); g.gain.exponentialRampToValueAtTime(0.001, t + 0.32);
+    o.connect(g).connect(ac.destination); o.start(); o.stop(t + 0.35);
+  } catch (e) {}
+}
+
+/* ---------- 畫布尺寸 ---------- */
+let W = 0, H = 0;
+function resize() {
+  const dpr = Math.min(window.devicePixelRatio || 1, 2);
+  W = window.innerWidth; H = window.innerHeight;
+  canvas.width = W * dpr; canvas.height = H * dpr;
+  ctx.setTransform(dpr, 0, 0, dpr, 0, 0);
+}
+window.addEventListener('resize', resize);
+resize();
+
+/* ---------- 攝影機（支援多鏡頭／USB cam 選擇） ---------- */
+let landmarker = null, lastVideoTime = -1, currentStream = null;
+
+async function initCamera(deviceId) {
+  const base = { width: { ideal: 960 }, height: { ideal: 540 } };
+  const constraints = deviceId
+    ? { video: { ...base, deviceId: { exact: deviceId } }, audio: false }
+    : { video: { ...base, facingMode: 'user' }, audio: false };
+  let stream;
+  try {
+    stream = await navigator.mediaDevices.getUserMedia(constraints);
+  } catch (e) {
+    if (!deviceId) throw e;
+    // 指定的鏡頭不存在（可能已拔除）→ 退回預設鏡頭
+    console.warn('指定鏡頭開啟失敗，改用預設鏡頭', e);
+    localStorage.removeItem('fnc-cam');
+    stream = await navigator.mediaDevices.getUserMedia({ video: { ...base, facingMode: 'user' }, audio: false });
+  }
+  if (currentStream) currentStream.getTracks().forEach(t => t.stop());
+  currentStream = stream;
+  video.srcObject = stream;
+  lastVideoTime = -1;
+  await new Promise((res, rej) => {
+    video.onloadedmetadata = res;
+    setTimeout(() => rej(new Error('camera timeout')), 8000);
+  });
+  await video.play();
+}
+
+function currentCamId() {
+  const track = currentStream && currentStream.getVideoTracks()[0];
+  return track ? (track.getSettings().deviceId || '') : '';
+}
+
+/* 列舉鏡頭並填入下拉選單（需已取得權限，label 才會有值） */
+async function refreshCamPicker() {
+  if (!navigator.mediaDevices?.enumerateDevices) return [];
+  const cams = (await navigator.mediaDevices.enumerateDevices()).filter(d => d.kind === 'videoinput');
+  const sel = $('cam-select');
+  sel.innerHTML = '';
+  cams.forEach((c, i) => {
+    const opt = document.createElement('option');
+    opt.value = c.deviceId;
+    opt.textContent = c.label || `鏡頭 ${i + 1}`;
+    sel.appendChild(opt);
+  });
+  const cur = currentCamId();
+  if (cur) sel.value = cur;
+  $('cam-picker').classList.toggle('hidden', cams.length < 2);
+  return cams;
+}
+
+/* 沒有記憶的選擇時，優先挑標籤看起來是外接 USB 的鏡頭 */
+function pickPreferredCam(cams) {
+  const saved = localStorage.getItem('fnc-cam');
+  if (saved && cams.some(c => c.deviceId === saved)) return saved;
+  const usb = cams.find(c => /usb|uvc|external|webcam/i.test(c.label) && !/integrated|built[- ]?in|internal|內建/i.test(c.label));
+  return usb ? usb.deviceId : null;
+}
+
+async function initLandmarker() {
+  const vision = await import(CDN);
+  const fileset = await vision.FilesetResolver.forVisionTasks(CDN + '/wasm');
+  const opts = {
+    baseOptions: { modelAssetPath: MODEL_URL, delegate: 'GPU' },
+    runningMode: 'VIDEO', numHands: 2,
+    // 調低信心門檻：追蹤不易中斷，光點更緊跟著手
+    minHandDetectionConfidence: 0.3,
+    minHandPresenceConfidence: 0.3,
+    minTrackingConfidence: 0.3,
+  };
+  try {
+    landmarker = await vision.HandLandmarker.createFromOptions(fileset, opts);
+  } catch (e) {
+    console.warn('GPU delegate 失敗，改用 CPU', e);
+    opts.baseOptions.delegate = 'CPU';
+    landmarker = await vision.HandLandmarker.createFromOptions(fileset, opts);
+  }
+  console.log('HandLandmarker 就緒');
+}
+
+/* 將 landmark（相對於原始影像）換算為畫面座標：
+ * 影像以 object-fit:cover 滿版 + scaleX(-1) 鏡像 */
+function lmToScreen(lm) {
+  const vw = video.videoWidth || 1, vh = video.videoHeight || 1;
+  const s = Math.max(W / vw, H / vh);
+  const ox = (W - vw * s) / 2, oy = (H - vh * s) / 2;
+  return { x: (1 - lm.x) * vw * s + ox, y: lm.y * vh * s + oy };
+}
+
+function detectHands() {
+  if (!landmarker || video.readyState < 2) return;
+  if (video.currentTime === lastVideoTime) return;
+  lastVideoTime = video.currentTime;
+  let result;
+  try { result = landmarker.detectForVideo(video, performance.now()); } catch (e) { return; }
+  const seen = new Set();
+  const now = performance.now();
+  (result.landmarks || []).forEach((hand, i) => {
+    const tip = lmToScreen(hand[8]);   // 食指指尖
+    const key = 'hand' + i;
+    seen.add(key);
+    pushBladePoint(key, tip.x, tip.y, now);
+  });
+  // 沒偵測到的手：讓刀光自然消散
+  for (const key of G.blades.keys())
+    if (key.startsWith('hand') && !seen.has(key)) G.blades.get(key).idle = true;
+}
+
+/* ---------- 刀鋒軌跡 ---------- */
+function pushBladePoint(key, x, y, t) {
+  let b = G.blades.get(key);
+  if (!b) { b = { trail: [], swipeFruits: 0, swipeEnd: 0 }; G.blades.set(key, b); }
+  b.idle = false;
+  const prev = b.trail[b.trail.length - 1];
+  b.trail.push({ x, y, t });
+  if (b.trail.length > TRAIL_MAX) b.trail.shift();
+  if (G.state !== 'playing' || !prev) return;
+
+  const dt = (t - prev.t) / 1000;
+  if (dt <= 0 || dt > 0.25) return;
+  const speed = Math.hypot(x - prev.x, y - prev.y) / dt;
+  if (speed < SLICE_SPEED) { endSwipe(b, t); return; }
+
+  // 這一段軌跡是有效揮刀 → 檢查與所有水果的碰撞
+  let hits = 0;
+  for (const f of G.fruits) {
+    if (f.dead) continue;
+    if (segCircle(prev.x, prev.y, x, y, f.x, f.y, f.r)) {
+      sliceFruit(f, Math.atan2(y - prev.y, x - prev.x));
+      hits++;
+    }
+  }
+  if (hits > 0) {
+    if (t > b.swipeEnd) b.swipeFruits = 0;   // 新的一次揮動
+    b.swipeFruits += hits;
+    b.swipeEnd = t + 260;                    // 260ms 內連續命中算同一刀
+    if (b.swipeFruits >= 3) {
+      const bonus = b.swipeFruits * 15;
+      G.score += bonus;
+      addFloater(x, y, `COMBO ×${b.swipeFruits}　+${bonus}`, '#ffe066');
+      sfxCombo(b.swipeFruits);
+      b.swipeFruits = 0; b.swipeEnd = 0;
+    }
+  }
+}
+function endSwipe(b, t) { if (t > b.swipeEnd) b.swipeFruits = 0; }
+
+/* 線段與圓的碰撞 */
+function segCircle(x1, y1, x2, y2, cx, cy, r) {
+  const dx = x2 - x1, dy = y2 - y1;
+  const len2 = dx * dx + dy * dy;
+  let u = len2 ? ((cx - x1) * dx + (cy - y1) * dy) / len2 : 0;
+  u = Math.max(0, Math.min(1, u));
+  const px = x1 + u * dx, py = y1 + u * dy;
+  return Math.hypot(cx - px, cy - py) <= r;
+}
+
+/* ---------- 滑鼠／觸控刀鋒 ---------- */
+function bindPointer() {
+  canvas.addEventListener('pointermove', e => {
+    if (G.mode !== 'mouse') return;
+    pushBladePoint('mouse', e.clientX, e.clientY, performance.now());
+  });
+  canvas.addEventListener('pointerdown', e => {
+    if (G.mode !== 'mouse') return;
+    pushBladePoint('mouse', e.clientX, e.clientY, performance.now());
+  });
+}
+
+/* ---------- 水果 ---------- */
+function spawnWave() {
+  const L = LEVELS[G.level];
+  const n = L.waveMin + Math.floor(Math.random() * (L.waveMax - L.waveMin + 1));
+  for (let i = 0; i < n; i++) {
+    const isBomb = G.spawnCount > 4 && Math.random() < L.bomb;
+    const kind = FRUITS[Math.floor(Math.random() * FRUITS.length)];
+    const r = isBomb ? 58 : 58 + Math.random() * 26;
+    const x = W * (0.1 + Math.random() * 0.8);
+    // 初速：往上拋，頂點約在畫面 20%~55% 高度
+    const peak = H * (0.2 + Math.random() * 0.35);
+    const vy = -Math.sqrt(2 * GRAVITY * (H + r - peak));
+    const vx = (W / 2 - x) * (0.25 + Math.random() * 0.5) / 1.6;
+    G.fruits.push({
+      emoji: isBomb ? '💣' : kind.emoji, juice: isBomb ? '#666' : kind.juice,
+      bomb: isBomb, x, y: H + r, vx, vy, r,
+      rot: Math.random() * Math.PI * 2, vr: (Math.random() - 0.5) * 4, dead: false,
+    });
+    G.spawnCount++;
+    if (!isBomb) G.levelSpawned++;   // 保底額度只算水果，不含炸彈
+  }
+}
+
+function sliceFruit(f, angle) {
+  f.dead = true;
+  if (f.bomb) {
+    sfxBomb();
+    app.classList.remove('shake'); void app.offsetWidth; app.classList.add('shake');
+    const fl = $('flash'); fl.classList.remove('boom'); void fl.offsetWidth; fl.classList.add('boom');
+    burst(f.x, f.y, '#ffb347', 26, 520);
+    burst(f.x, f.y, '#555', 18, 380);
+    addFloater(f.x, f.y, '💥 -1', '#ff6b6b');
+    loseLife();
+    return;
+  }
+  sfxSlice();
+  G.score += 10;
+  addFloater(f.x, f.y - f.r, '+10', '#fff');
+  burst(f.x, f.y, f.juice, 14, 340);
+  // 兩個半塊沿切割線分離
+  const push = 190, perp = angle + Math.PI / 2;
+  for (const side of [-1, 1]) {
+    G.halves.push({
+      emoji: f.emoji, x: f.x, y: f.y, r: f.r, slice: angle, side,
+      vx: f.vx + Math.cos(perp) * push * side,
+      vy: f.vy * 0.4 + Math.sin(perp) * push * side - 80,
+      rot: f.rot, vr: f.vr + side * 3, life: 1.6,
+    });
+  }
+  renderHUD();
+}
+
+function loseLife() {
+  G.lives--;
+  renderHUD();
+  if (G.lives <= 0) gameOver();
+}
+
+/* ---------- 粒子與浮動文字 ---------- */
+function burst(x, y, color, n, speed) {
+  for (let i = 0; i < n; i++) {
+    const a = Math.random() * Math.PI * 2, v = speed * (0.35 + Math.random() * 0.65);
+    G.particles.push({ x, y, vx: Math.cos(a) * v, vy: Math.sin(a) * v - 120,
+                       r: 2.5 + Math.random() * 4.5, color, life: 0.55 + Math.random() * 0.4 });
+  }
+}
+function addFloater(x, y, text, color) {
+  G.floaters.push({ x, y, text, color, life: 1.1 });
+}
+
+/* ---------- 更新 ---------- */
+function update(dt) {
+  if (G.state !== 'playing') return;
+  G.elapsed += dt;
+
+  // 關卡橫幅顯示期間暫停生成與倒數（場上的水果照常運動）
+  if (G.bannerTime > 0) {
+    G.bannerTime -= dt;
+  } else {
+    G.levelTime -= dt;
+    renderTimer();
+    // 時間到且已拋滿保底顆數才過關（未滿則繼續快速補拋）
+    if (G.levelTime <= 0 && G.levelSpawned >= MIN_FRUITS_PER_LEVEL) {
+      if (G.level >= LEVELS.length - 1) { gameOver(true); return; }
+      G.level++;
+      G.levelTime = LEVELS[G.level].time;
+      G.levelSpawned = 0;
+      lastShownSec = -1; renderTimer();
+      G.spawnTimer = 1.0;
+      if (G.lives < MAX_LIVES) { G.lives++; addFloater(W / 2, H * 0.55, '過關獎勵 ❤️ +1', '#ff8a8a'); }
+      showBanner(LEVELS[G.level].name);
+      addFloater(W / 2, H * 0.65, '難度提升！', '#ffd27a');
+      renderHUD();
+    }
+    G.spawnTimer -= dt;
+    if (G.spawnTimer <= 0) {
+      spawnWave();
+      const L = LEVELS[G.level];
+      let gap = L.spawnGap + Math.random() * 0.5;
+      // 保底配速：依剩餘額度動態縮短間隔，確保時間內拋滿 MIN_FRUITS_PER_LEVEL 顆
+      const quota = MIN_FRUITS_PER_LEVEL - G.levelSpawned;
+      if (quota > 0) {
+        const wavesNeeded = Math.ceil(quota / ((L.waveMin + L.waveMax) / 2));
+        gap = Math.min(gap, Math.max(0.4, (G.levelTime - 2) / wavesNeeded));
+      }
+      G.spawnTimer = gap;
+    }
+  }
+
+  for (const f of G.fruits) {
+    f.vy += GRAVITY * dt;
+    f.x += f.vx * dt; f.y += f.vy * dt; f.rot += f.vr * dt;
+    if (!f.dead && f.vy > 0 && f.y > H + f.r * 2) {
+      f.dead = true;
+      if (!f.bomb) { sfxMiss(); addFloater(f.x, H - 60, '漏接 -1', '#ff8a8a'); loseLife(); }
+    }
+  }
+  G.fruits = G.fruits.filter(f => !f.dead);
+
+  for (const h of G.halves) {
+    h.vy += GRAVITY * dt;
+    h.x += h.vx * dt; h.y += h.vy * dt; h.rot += h.vr * dt; h.life -= dt;
+  }
+  G.halves = G.halves.filter(h => h.life > 0 && h.y < H + 200);
+
+  for (const p of G.particles) {
+    p.vy += GRAVITY * 0.6 * dt;
+    p.x += p.vx * dt; p.y += p.vy * dt; p.life -= dt;
+  }
+  G.particles = G.particles.filter(p => p.life > 0);
+
+  for (const t of G.floaters) { t.y -= 55 * dt; t.life -= dt; }
+  G.floaters = G.floaters.filter(t => t.life > 0);
+}
+
+/* ---------- 繪製 ---------- */
+function drawEmoji(emoji, x, y, r, rot, sliceAngle, side) {
+  ctx.save();
+  ctx.translate(x, y);
+  if (sliceAngle !== undefined) {          // 半塊：沿切割線裁切
+    ctx.rotate(sliceAngle);
+    ctx.beginPath();
+    ctx.rect(-r * 2.2, side < 0 ? -r * 2.2 : 0, r * 4.4, r * 2.2);
+    ctx.clip();
+    ctx.rotate(-sliceAngle);
+  }
+  ctx.rotate(rot);
+  ctx.font = `${r * 2}px "Segoe UI Emoji", "Apple Color Emoji", sans-serif`;
+  ctx.textAlign = 'center'; ctx.textBaseline = 'middle';
+  ctx.fillText(emoji, 0, 0);
+  ctx.restore();
+}
+
+function draw() {
+  ctx.clearRect(0, 0, W, H);
+  const now = performance.now();
+
+  for (const f of G.fruits) drawEmoji(f.emoji, f.x, f.y, f.r, f.rot);
+  for (const h of G.halves) {
+    ctx.globalAlpha = Math.min(1, h.life / 0.5);
+    drawEmoji(h.emoji, h.x, h.y, h.r, h.rot, h.slice, h.side);
+    ctx.globalAlpha = 1;
+  }
+
+  for (const p of G.particles) {
+    ctx.globalAlpha = Math.max(0, Math.min(1, p.life / 0.4));
+    ctx.fillStyle = p.color;
+    ctx.beginPath(); ctx.arc(p.x, p.y, p.r, 0, Math.PI * 2); ctx.fill();
+  }
+  ctx.globalAlpha = 1;
+
+  // 刀光：漸淡漸細的白色發光折線＋常駐指尖光點
+  for (const [key, b] of G.blades) {
+    const last = b.trail[b.trail.length - 1];
+    // 揮動軌跡 350ms 內漸逝；但最新的點（＝手的位置）保留 1 秒，手停住光點也不消失
+    let pts = b.trail.filter(p => now - p.t < 350);
+    if (!pts.length && last && now - last.t < 1000) pts = [last];
+    b.trail = pts;
+    if (!pts.length) { if (b.idle) G.blades.delete(key); continue; }
+    ctx.save();
+    ctx.lineCap = 'round'; ctx.lineJoin = 'round';
+    ctx.shadowColor = 'rgba(140,220,255,.9)'; ctx.shadowBlur = 14;
+    for (let i = 1; i < pts.length; i++) {
+      const a = i / pts.length;
+      ctx.strokeStyle = `rgba(255,255,255,${0.15 + a * 0.85})`;
+      ctx.lineWidth = 1 + a * 9;
+      ctx.beginPath();
+      ctx.moveTo(pts[i - 1].x, pts[i - 1].y);
+      ctx.lineTo(pts[i].x, pts[i].y);
+      ctx.stroke();
+    }
+    // 指尖光點：手在哪、光點就在哪
+    const tip = pts[pts.length - 1];
+    ctx.shadowBlur = 20;
+    ctx.fillStyle = 'rgba(180,235,255,.95)';
+    ctx.beginPath(); ctx.arc(tip.x, tip.y, 9, 0, Math.PI * 2); ctx.fill();
+    ctx.restore();
+  }
+
+  for (const t of G.floaters) {
+    ctx.globalAlpha = Math.max(0, Math.min(1, t.life));
+    ctx.font = '700 26px "Microsoft JhengHei", sans-serif';
+    ctx.textAlign = 'center';
+    ctx.fillStyle = t.color;
+    ctx.shadowColor = 'rgba(0,0,0,.7)'; ctx.shadowBlur = 6;
+    ctx.fillText(t.text, t.x, t.y);
+    ctx.shadowBlur = 0;
+  }
+  ctx.globalAlpha = 1;
+}
+
+/* ---------- 主迴圈 ---------- */
+let lastT = performance.now();
+function loop(t) {
+  const dt = Math.min(0.05, (t - lastT) / 1000);
+  lastT = t;
+  if (G.mode === 'cam') detectHands();
+  update(dt);
+  draw();
+  requestAnimationFrame(loop);
+}
+requestAnimationFrame(loop);
+
+/* ---------- 流程控制 ---------- */
+function startGame() {
+  G.state = 'playing';
+  G.score = 0; G.lives = MAX_LIVES;
+  G.fruits = []; G.halves = []; G.particles = []; G.floaters = [];
+  G.blades.clear();
+  G.elapsed = 0; G.spawnTimer = 0.8; G.spawnCount = 0;
+  G.level = 0; G.levelTime = LEVELS[0].time; G.levelSpawned = 0;
+  lastShownSec = -1; renderTimer();
+  showBanner(LEVELS[0].name);
+  $('start-screen').classList.add('hidden');
+  $('gameover-screen').classList.add('hidden');
+  $('hud').classList.add('on');
+  renderHUD();
+}
+
+function gameOver(win = false) {
+  G.state = 'gameover';
+  const isNew = G.score > G.best;
+  if (isNew) { G.best = G.score; localStorage.setItem('fnc-best', G.best); }
+  $('gameover-emoji').textContent = win ? '🎉' : '🏁';
+  $('gameover-title').textContent = win ? '恭喜全部過關！' : '遊戲結束';
+  $('final-score').textContent = G.score;
+  const fb = $('final-best');
+  fb.textContent = isNew ? '🎉 新紀錄！' : '最高分 ' + G.best;
+  fb.classList.toggle('new-record', isNew);
+  $('gameover-screen').classList.remove('hidden');
+}
+
+function setMode(mode) {
+  G.mode = mode;
+  $('mode-badge').textContent = mode === 'cam' ? '📷 體感模式：揮動食指切水果' : '🖱️ 滑鼠模式：移動游標切水果';
+  if (mode === 'cam') { video.classList.add('on'); $('veil').classList.add('on'); }
+}
+
+async function startCam() {
+  const btn = $('start-btn'), msg = $('loading-msg');
+  btn.disabled = true;
+  try {
+    msg.innerHTML = '<span class="spin">⏳</span> 開啟攝影機並載入手部追蹤模型…';
+    // 下拉選單有選擇就用它，否則用上次記憶的鏡頭
+    const chosen = $('cam-select').value || localStorage.getItem('fnc-cam') || null;
+    await Promise.all([initCamera(chosen), landmarker ? Promise.resolve() : initLandmarker()]);
+    // 取得權限後才能列舉鏡頭：若沒指定過鏡頭且偵測到 USB 外接鏡頭，自動切換過去
+    const cams = await refreshCamPicker();
+    if (!chosen) {
+      const preferred = pickPreferredCam(cams);
+      if (preferred && preferred !== currentCamId()) {
+        msg.innerHTML = '<span class="spin">⏳</span> 偵測到外接 USB 鏡頭，切換中…';
+        try {
+          await initCamera(preferred);
+          $('cam-select').value = preferred;
+        } catch (e) {
+          // USB 鏡頭開不了（多半被其他程式佔用）→ 留在原本可用的鏡頭繼續玩
+          console.warn('切換 USB 鏡頭失敗，沿用預設鏡頭', e);
+        }
+      }
+    }
+    localStorage.setItem('fnc-cam', currentCamId());
+    setMode('cam');
+    msg.textContent = '';
+    startGame();
+  } catch (e) {
+    console.warn('攝影機/模型初始化失敗，退回滑鼠模式', e);
+    msg.textContent = '⚠️ ' + camErrorText(e) + '，已改用滑鼠模式';
+    setMode('mouse');
+    setTimeout(startGame, 1800);
+  } finally {
+    btn.disabled = false;
+  }
+}
+
+// 測試鉤子：headless 環境 rAF 可能被節流，允許手動推進遊戲時間
+G._test = { step: dt => { update(dt); draw(); }, spawnWave, pushBladePoint, sliceFruit };
+
+function camErrorText(e) {
+  switch (e && e.name) {
+    case 'NotReadableError': case 'TrackStartError':
+      return '鏡頭正被其他程式使用中（請關閉 OBS、相機、視訊會議等 App 後重試）';
+    case 'NotAllowedError': case 'PermissionDeniedError':
+      return '瀏覽器的攝影機權限被拒絕（請點網址列的 🔒/📷 圖示允許攝影機）';
+    case 'NotFoundError': case 'DevicesNotFoundError':
+      return '找不到任何攝影機（請確認 USB 鏡頭已插好，並檢查 Windows 設定 → 隱私權 → 攝影機）';
+    case 'OverconstrainedError':
+      return '指定的鏡頭已不存在（可能已拔除）';
+    default:
+      return '無法使用攝影機（' + ((e && (e.message || e.name)) || '未知錯誤') + '）';
+  }
+}
+
+function backToMenu() {
+  G.state = 'start';
+  $('gameover-screen').classList.add('hidden');
+  $('hud').classList.remove('on');
+  $('start-screen').classList.remove('hidden');
+  if (G.mode === 'cam') refreshCamPicker();   // 已有權限，label 齊全，讓玩家換鏡頭
+}
+
+/* 在開始畫面切換鏡頭：立即套用並記住 */
+$('cam-select').addEventListener('change', async e => {
+  const id = e.target.value;
+  if (!id) return;
+  const msg = $('loading-msg');
+  try {
+    await initCamera(id);
+    if (currentCamId() && currentCamId() !== id) {
+      // initCamera 內部退回了預設鏡頭 → 誠實告知並校正選單
+      msg.textContent = '⚠️ 該鏡頭無法開啟（可能被其他程式佔用），已改用預設鏡頭';
+      $('cam-select').value = currentCamId();
+    } else {
+      msg.textContent = '';
+    }
+    localStorage.setItem('fnc-cam', currentCamId());
+  } catch (err) {
+    console.warn('切換鏡頭失敗', err);
+    msg.textContent = '⚠️ ' + camErrorText(err);
+  }
+});
+
+$('menu-btn').addEventListener('click', backToMenu);
+$('start-btn').addEventListener('click', startCam);
+$('mouse-btn').addEventListener('click', () => { setMode('mouse'); startGame(); });
+$('restart-btn').addEventListener('click', () => {
+  if (G.mode === 'none') setMode('mouse');
+  startGame();
+});
+bindPointer();
+renderHUD();
+</script>
+</body>
+</html>
