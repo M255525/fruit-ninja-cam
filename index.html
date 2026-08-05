@@ -53,6 +53,12 @@
     color: #fff; background: rgba(0,0,0,.45); border: 1px solid rgba(255,255,255,.25);
     padding: 5px 14px; border-radius: 999px; font-size: 13px; backdrop-filter: blur(4px);
   }
+  /* 窄螢幕：#level-info 是水平置中，#lives 是靠右對齊，兩者都假設螢幕夠寬才不會
+     打架——手機寬度（<~624px）時置中的關卡資訊會直接疊到愛心上。把關卡資訊移到
+     第二行，跟分數／愛心那一列分開，不論愛心格數多少都不會再碰在一起。 */
+  @media (max-width: 700px) {
+    #level-info { top: 54px; font-size: 17px; gap: 10px; }
+  }
 
   /* ===== 覆蓋畫面（開始 / 結算） ===== */
   .screen {

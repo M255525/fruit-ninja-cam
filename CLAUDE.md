@@ -14,9 +14,14 @@
 - **每關保底 50 顆水果**（`MIN_FRUITS_PER_LEVEL`，不含炸彈）：生成時依剩餘額度動態縮短間隔配速；時間到但額度未滿則延長該關直到拋滿才過關。實測三關各拋 50／75／124 顆。
 - **最高分**：localStorage key `fnc-best`。
 
+## 手機版面修正（2026-08-05）
+
+實測手機寬度（390px）發現 HUD 頂部的 `#level-info`（第 X 關＋倒數，`left:50%` 水平置中）跟 `#lives`（愛心，`right:18px` 靠右對齊）會疊在一起——兩者都是各自 `position:absolute` 假設螢幕夠寬才不會碰撞，實測窄於約 624px 就會重疊。**修法**：新增 `@media (max-width:700px)` 規則，把 `#level-info` 往下移到第二行（`top:54px`，字體縮到 17px），跟分數／愛心那一列分開，不論愛心格數多少都不會再碰在一起（已用 `getBoundingClientRect()` 實測前後座標確認重疊消失）。這是純 CSS 版面修正，跟手部追蹤／切割判定邏輯無關。
+
 ## 測試
 
 - 預覽：Preview MCP `preview_start`（名稱 `fruit-ninja-cam`，port 8767），開 `http://localhost:8767/index.html`。
 - 自動化測試走**滑鼠模式**（headless 無鏡頭）：點「改用滑鼠／觸控玩」，對 canvas 派發 `pointermove` 事件模擬揮砍。
 - `window.__game` 暴露完整遊戲狀態（`state`、`mode`、`score`、`lives`、`fruits[]`…）供斷言；也可直接呼叫內部不可及時用它讀取水果座標來瞄準。
 - 真實體感效果需使用者以實體攝影機手動驗證。
+- **⚠️ 用真實 Chrome（非 headless sandbox）測試這個專案要格外小心**：2026-08-05 測試手機版面時，點擊「改用滑鼠／觸控玩」後畫面**仍然啟動了真實攝影機**並拍到使用者本人畫面（不是預期的滑鼠模式）——原因未完全查明，懷疑是瀏覽器已有先前授予的攝影機權限、且該次點擊時機/座標與頁面初始化有 race condition。**之後測試這個專案時，觸發任何「開始遊戲」相關按鈕前，务必先用 `document.getElementById('mouse-btn').disabled` 或監看 `mode-badge` 文字確認真的進入滑鼠模式再截圖**，避免意外擷取真人鏡頭畫面；若不慎拍到，立即在頁面內呼叫 `video.srcObject.getTracks().forEach(t=>t.stop())` 停止攝影機，並刪除該截圖檔案，不得保留或分享。
