@@ -9,6 +9,23 @@
   * { margin: 0; padding: 0; box-sizing: border-box; }
   html, body { width: 100%; height: 100%; overflow: hidden; background: #0b1020; font-family: "Microsoft JhengHei", "Noto Sans TC", sans-serif; }
   #app { position: fixed; inset: 0; }
+  /* 頂部跑馬燈（跟工作區其他工具共用同一份 Google Sheet 公告內容）。
+     #app 用 inset:0 撐滿整個視窗、裡面所有 HUD 元素都是相對 #app 絕對定位，
+     所以顯示跑馬燈時只要把 #app 的 top 往下推，底下所有元素會一起跟著平移，
+     不用逐一調整每個 HUD 元素自己的 top 值。 */
+  #marqueeBar {
+    position: fixed; top: 0; left: 0; right: 0; height: 26px; z-index: 50;
+    background: rgba(11,16,32,.92); border-bottom: 1px solid rgba(255,255,255,.15);
+    overflow: hidden; display: none; align-items: center;
+  }
+  #marqueeBar.on { display: flex; }
+  #marqueeTrack {
+    display: inline-block; white-space: nowrap; padding-left: 100%;
+    font-size: 12px; font-weight: 700; color: #ffd27a;
+    animation: marquee-scroll 30s linear infinite;
+  }
+  @keyframes marquee-scroll { from { transform: translateX(0); } to { transform: translateX(-50%); } }
+  body.has-marquee #app { top: 26px; }
   /* 鏡像顯示攝影機畫面，object-fit: cover 滿版 */
   #cam {
     position: absolute; inset: 0; width: 100%; height: 100%;
@@ -93,6 +110,7 @@
   .picker select option { color: #000; }
   #loading-msg { font-size: 16px; color: #ffd27a; min-height: 24px; }
   #loading-msg .spin { display: inline-block; animation: spin 1s linear infinite; }
+  .footnote { font-size: 11px; color: rgba(255,255,255,.55); line-height: 1.7; max-width: 480px; margin-top: 2px; }
   @keyframes spin { to { transform: rotate(360deg); } }
   #final-score { font-size: clamp(56px, 12vw, 100px); font-weight: 900; color: #ffd27a; line-height: 1; }
   #final-best { font-size: 18px; opacity: .9; }
@@ -111,6 +129,7 @@
 </style>
 </head>
 <body>
+<div id="marqueeBar"><div id="marqueeTrack"></div></div>
 <div id="app">
   <video id="cam" autoplay playsinline muted></video>
   <div id="veil"></div>
@@ -143,6 +162,10 @@
     </div>
     <button id="mouse-btn" class="btn secondary">改用滑鼠／觸控玩 🖱️</button>
     <div id="loading-msg"></div>
+    <div class="footnote">
+      ⚠ 本工具僅供個人娛樂與教學示範使用，禁止未經授權公開發布、販售或商業化使用。<br>
+      創作者：蔡豐全（Mark Tsai）
+    </div>
   </div>
 
   <div id="gameover-screen" class="screen hidden">
@@ -802,6 +825,53 @@ $('restart-btn').addEventListener('click', () => {
 });
 bindPointer();
 renderHUD();
+</script>
+
+<script>
+/* 頂部跑馬燈 — 獨立運作，跟上面遊戲邏輯無關；內容抓自工作區共用的授權伺服器
+   （doPost 不論序號是否有效都會附上 marquee 陣列，這個遊戲沒有序號登入機制，
+   所以直接帶空序號打，只取 marquee 欄位）。跟其他共用同一份跑馬燈 Google Sheet
+   的工具改內容互通，不需要分開維護。抓取失敗就靜默不顯示，不影響離線開玩。 */
+(function () {
+  'use strict';
+  var MARQUEE_CHECK_URL = "https://script.google.com/macros/s/AKfycbwKX0DNNbY8y4nf90BFTHtxgfqJcHHcZasRrgycl4QAe52_hkjMWSkYk4xOsqU-JPCROw/exec";
+  var STORAGE_KEY = 'fncMarquee';
+  var REFRESH_MS = 20 * 60 * 1000;
+
+  var bar = document.getElementById('marqueeBar');
+  var track = document.getElementById('marqueeTrack');
+
+  function loadCache() {
+    try { return JSON.parse(localStorage.getItem(STORAGE_KEY) || '[]'); } catch (e) { return []; }
+  }
+  function saveCache(items) {
+    try { localStorage.setItem(STORAGE_KEY, JSON.stringify(items)); } catch (e) {}
+  }
+  function render(items) {
+    if (!items || !items.length) return;
+    var joined = items.join('　★　');
+    track.textContent = joined + '　★　' + joined;
+    bar.classList.add('on');
+    document.body.classList.add('has-marquee');
+    var width = track.scrollWidth / 2;
+    track.style.animationDuration = Math.max(width / 80, 10) + 's';
+  }
+  function fetchMarquee() {
+    fetch(MARQUEE_CHECK_URL, { method: 'POST', body: JSON.stringify({ serial: '' }) })
+      .then(function (r) { return r.json(); })
+      .then(function (data) {
+        if (data && Array.isArray(data.marquee) && data.marquee.length) {
+          saveCache(data.marquee);
+          render(data.marquee);
+        }
+      })
+      .catch(function () {});
+  }
+
+  render(loadCache());
+  fetchMarquee();
+  setInterval(fetchMarquee, REFRESH_MS);
+})();
 </script>
 </body>
 </html>

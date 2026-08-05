@@ -18,6 +18,16 @@
 
 實測手機寬度（390px）發現 HUD 頂部的 `#level-info`（第 X 關＋倒數，`left:50%` 水平置中）跟 `#lives`（愛心，`right:18px` 靠右對齊）會疊在一起——兩者都是各自 `position:absolute` 假設螢幕夠寬才不會碰撞，實測窄於約 624px 就會重疊。**修法**：新增 `@media (max-width:700px)` 規則，把 `#level-info` 往下移到第二行（`top:54px`，字體縮到 17px），跟分數／愛心那一列分開，不論愛心格數多少都不會再碰在一起（已用 `getBoundingClientRect()` 實測前後座標確認重疊消失）。這是純 CSS 版面修正，跟手部追蹤／切割判定邏輯無關。
 
+## 頂部跑馬燈與「關於」資訊（2026-08-05 新增）
+
+`#marqueeBar` 顯示跟工作區其他工具共用同一份 Google Sheet 維護的公告內容，同一個授權伺服器 Apps Script 網址。這個遊戲**沒有序號登入機制**，做法是頁面載入時直接 POST 空序號給該網址，只取回傳的 `marquee` 欄位。`localStorage` key 為 `fncMarquee`。
+
+**版面整合方式跟其他工具不同**：這個遊戲的 `#app` 是 `position:fixed;inset:0` 撐滿整個視窗，底下所有 HUD／攝影機／canvas 元素都是相對 `#app` 絕對定位（不是 flex column）。所以顯示跑馬燈時不是逐一調整每個 HUD 元素的 `top`，而是用 `body.has-marquee #app{top:26px}` 把整個 `#app` 的頂邊往下推 26px（跑馬燈高度）——底下所有絕對定位的子元素會跟著一起平移，不用動任何既有 HUD 元素的座標。跑馬燈本身則是獨立的 `position:fixed` 疊層，蓋在最上面（`z-index:50`）。
+
+使用警語（僅供個人娛樂與教學示範使用）＋「創作者：蔡豐全（Mark Tsai）」放在開始畫面（`#start-screen`）最下面，做成 `.footnote` 小字——這個遊戲沒有「設定頁」，開始畫面是唯一常駐、不需要進入遊戲/開攝影機就看得到的畫面，所以放這裡。**不要放進 `#hud`**（遊戲進行中畫面全被攝影機/canvas 佔滿，加常駐文字只會擋到水果）。
+
+**⚠️ 驗證這次改動時刻意只測開始畫面**（截圖、量測 `#app`／`#marqueeBar` 座標），完全沒有點擊「開始遊戲」或「改用滑鼠／觸控玩」進入遊戲流程——見上方「⚠️ 用真實 Chrome 測試」的教訓，避免重蹈意外觸發攝影機的覆轍。
+
 ## 測試
 
 - 預覽：Preview MCP `preview_start`（名稱 `fruit-ninja-cam`，port 8767），開 `http://localhost:8767/index.html`。
