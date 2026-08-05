@@ -2,6 +2,8 @@
 
 單檔靜態網頁遊戲：`index.html` 即完整專案，無建置步驟、無 package.json。
 
+**GitHub**：2026-08-05 建立公開 repo <https://github.com/M255525/fruit-ninja-cam>（分支 `master`），含 `README.md`。**目前沒有啟用 GitHub Pages**——只是程式碼託管，沒有要求上線可玩網址（若之後要加，這個專案主檔本來就叫 `index.html`，不像 `Rummikub` 需要額外的重新導向 stub，直接開啟 Pages 即可）。
+
 ## 架構
 
 - **手部追蹤**：`@mediapipe/tasks-vision` HandLandmarker，經 jsdelivr CDN 以動態 `import()` 載入（版本 0.10.14），模型檔從 Google 官方 storage 載入。GPU delegate 失敗自動退回 CPU。**首次啟動需要網路**下載 wasm 與模型（約 10MB），之後靠瀏覽器快取。
