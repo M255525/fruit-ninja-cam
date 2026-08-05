@@ -2,7 +2,7 @@
 
 單檔靜態網頁遊戲：`index.html` 即完整專案，無建置步驟、無 package.json。
 
-**GitHub**：2026-08-05 建立公開 repo <https://github.com/M255525/fruit-ninja-cam>（分支 `master`），含 `README.md`。**目前沒有啟用 GitHub Pages**——只是程式碼託管，沒有要求上線可玩網址（若之後要加，這個專案主檔本來就叫 `index.html`，不像 `Rummikub` 需要額外的重新導向 stub，直接開啟 Pages 即可）。
+**GitHub Pages 上線網址**：<https://m255525.github.io/fruit-ninja-cam/>（2026-08-05 啟用，`master` 分支根目錄）。公開 repo：<https://github.com/M255525/fruit-ninja-cam>，含 `README.md`。因為主檔本來就叫 `index.html`，不像 `Rummikub` 需要額外的重新導向 stub，`git push` 後 GitHub Pages 會自動重新部署（通常一兩分鐘內生效）。
 
 ## 架構
 
