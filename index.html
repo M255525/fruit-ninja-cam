@@ -477,11 +477,16 @@ function bindPointer() {
 /* ---------- 水果 ---------- */
 function spawnWave() {
   const L = LEVELS[G.level];
+  // 水果半徑原本是固定 58~84px，在桌機（畫面較寬）看起來比例正常，
+  // 但手機螢幕窄很多時同樣的絕對像素值會顯得過大。以螢幕較短邊 700px
+  // 為基準等比縮小（下限 0.45 避免螢幕極窄時水果小到難點），
+  // >=700px（桌機／平板）維持原尺寸不變。
+  const sizeScale = Math.max(0.45, Math.min(1, Math.min(W, H) / 700));
   const n = L.waveMin + Math.floor(Math.random() * (L.waveMax - L.waveMin + 1));
   for (let i = 0; i < n; i++) {
     const isBomb = G.spawnCount > 4 && Math.random() < L.bomb;
     const kind = FRUITS[Math.floor(Math.random() * FRUITS.length)];
-    const r = isBomb ? 58 : 58 + Math.random() * 26;
+    const r = (isBomb ? 58 : 58 + Math.random() * 26) * sizeScale;
     const x = W * (0.1 + Math.random() * 0.8);
     // 初速：往上拋，頂點約在畫面 20%~55% 高度
     const peak = H * (0.2 + Math.random() * 0.35);
