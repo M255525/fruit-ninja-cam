@@ -116,6 +116,26 @@
   #final-best { font-size: 18px; opacity: .9; }
   #final-best.new-record { color: #ffe066; font-weight: 700; }
 
+  /* ===== 排行榜 ===== */
+  #score-entry { display: flex; gap: 8px; align-items: center; flex-wrap: wrap; justify-content: center; }
+  #score-entry.hidden { display: none; }
+  #player-name-input {
+    font-family: inherit; font-size: 15px; color: #fff; width: min(200px, 50vw);
+    background: rgba(255,255,255,.1); border: 1px solid rgba(255,255,255,.35);
+    border-radius: 8px; padding: 8px 12px;
+  }
+  #player-name-input::placeholder { color: rgba(255,255,255,.5); }
+  #leaderboard { width: min(360px, 86vw); }
+  #leaderboard .lb-title { font-size: 14px; font-weight: 700; color: #ffd27a; margin-bottom: 6px; }
+  #lb-list { list-style: none; text-align: left; font-size: 14px; }
+  #lb-list li { display: flex; align-items: center; gap: 8px; padding: 5px 10px; border-radius: 8px; }
+  #lb-list li:nth-child(odd) { background: rgba(255,255,255,.06); }
+  #lb-list .lb-rank { width: 20px; font-weight: 900; color: #ffd27a; flex-shrink: 0; }
+  #lb-list .lb-name { flex: 1; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; min-width: 0; }
+  #lb-list .lb-mode { opacity: .85; flex-shrink: 0; }
+  #lb-list .lb-score { font-weight: 700; font-variant-numeric: tabular-nums; flex-shrink: 0; }
+  #lb-list .lb-empty { opacity: .6; text-align: center; padding: 8px; justify-content: center; }
+
   /* 炸彈爆炸震屏 */
   @keyframes shake {
     0%,100% { transform: translate(0,0); } 20% { transform: translate(-14px,8px); }
@@ -173,6 +193,17 @@
     <div id="gameover-title" style="font-size:30px;font-weight:900;letter-spacing:6px">遊戲結束</div>
     <div id="final-score">0</div>
     <div id="final-best"></div>
+
+    <div id="score-entry" class="hidden">
+      <input id="player-name-input" type="text" maxlength="10" placeholder="輸入暱稱（留白＝訪客）">
+      <button id="save-score-btn" class="btn secondary">🏆 記錄成績</button>
+    </div>
+
+    <div id="leaderboard">
+      <div class="lb-title">🏆 排行榜 TOP 5</div>
+      <ol id="lb-list"></ol>
+    </div>
+
     <button id="restart-btn" class="btn">再玩一次</button>
     <button id="menu-btn" class="btn secondary">回主選單（可換鏡頭）</button>
   </div>
@@ -718,6 +749,33 @@ function startGame() {
   renderHUD();
 }
 
+/* ---------- 排行榜（本機 localStorage，前 5 名） ---------- */
+const LB_KEY = 'fnc-leaderboard';
+function loadLB() {
+  try { return JSON.parse(localStorage.getItem(LB_KEY) || '[]'); } catch (e) { return []; }
+}
+function saveLB(list) {
+  try { localStorage.setItem(LB_KEY, JSON.stringify(list)); } catch (e) {}
+}
+function lbQualifies(score, list) {
+  return list.length < 5 || score > list[list.length - 1].score;
+}
+function escapeHtml(s) {
+  return String(s).replace(/[&<>"']/g, c => ({ '&': '&amp;', '<': '&lt;', '>': '&gt;', '"': '&quot;', "'": '&#39;' }[c]));
+}
+function renderLB(list) {
+  const ol = $('lb-list');
+  if (!list.length) { ol.innerHTML = '<li class="lb-empty">還沒有紀錄，快來搶第一名！</li>'; return; }
+  ol.innerHTML = list.map((e, i) => `
+    <li>
+      <span class="lb-rank">${i + 1}</span>
+      <span class="lb-name">${escapeHtml(e.name)}</span>
+      <span class="lb-mode">${e.mode === 'cam' ? '📷' : '🖱️'}</span>
+      <span class="lb-score">${e.score}</span>
+    </li>
+  `).join('');
+}
+
 function gameOver(win = false) {
   G.state = 'gameover';
   const isNew = G.score > G.best;
@@ -728,6 +786,16 @@ function gameOver(win = false) {
   const fb = $('final-best');
   fb.textContent = isNew ? '🎉 新紀錄！' : '最高分 ' + G.best;
   fb.classList.toggle('new-record', isNew);
+
+  const lb = loadLB();
+  if (lbQualifies(G.score, lb)) {
+    $('player-name-input').value = '';
+    $('score-entry').classList.remove('hidden');
+  } else {
+    $('score-entry').classList.add('hidden');
+  }
+  renderLB(lb);
+
   $('gameover-screen').classList.remove('hidden');
 }
 
@@ -821,6 +889,16 @@ $('cam-select').addEventListener('change', async e => {
   }
 });
 
+$('save-score-btn').addEventListener('click', () => {
+  const name = $('player-name-input').value.trim().slice(0, 10) || '訪客';
+  const lb = loadLB();
+  lb.push({ name, score: G.score, mode: G.mode, date: new Date().toLocaleDateString('zh-TW') });
+  lb.sort((a, b) => b.score - a.score);
+  lb.length = Math.min(lb.length, 5);
+  saveLB(lb);
+  renderLB(lb);
+  $('score-entry').classList.add('hidden');
+});
 $('menu-btn').addEventListener('click', backToMenu);
 $('start-btn').addEventListener('click', startCam);
 $('mouse-btn').addEventListener('click', () => { setMode('mouse'); startGame(); });
