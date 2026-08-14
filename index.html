@@ -5,6 +5,9 @@
 <meta name="viewport" content="width=device-width, initial-scale=1.0, user-scalable=no">
 <title>體感切水果</title>
 <link rel="icon" href="data:image/svg+xml,<svg xmlns=%22http://www.w3.org/2000/svg%22 viewBox=%220 0 100 100%22><text y=%22.9em%22 font-size=%2290%22>🍉</text></svg>">
+<link rel="manifest" href="manifest.json">
+<meta name="theme-color" content="#0b1020">
+<link rel="apple-touch-icon" href="icons/icon-192.png">
 <style>
   * { margin: 0; padding: 0; box-sizing: border-box; }
   html, body { width: 100%; height: 100%; overflow: hidden; background: #0b1020; font-family: "Microsoft JhengHei", "Noto Sans TC", sans-serif; }
@@ -181,6 +184,7 @@
       <label for="cam-select">📷 鏡頭：</label><select id="cam-select"></select>
     </div>
     <button id="mouse-btn" class="btn secondary">改用滑鼠／觸控玩 🖱️</button>
+    <button id="installBtn" class="btn secondary">📲 加入主畫面</button>
     <div id="loading-msg"></div>
     <div class="footnote">
       ⚠ 本工具僅供個人娛樂與教學示範使用，禁止未經授權公開發布、販售或商業化使用。<br>
@@ -954,6 +958,41 @@ renderHUD();
   render(loadCache());
   fetchMarquee();
   setInterval(fetchMarquee, REFRESH_MS);
+})();
+</script>
+<script>
+/* PWA 加入主畫面 — 獨立運作，跟上面遊戲邏輯無關 */
+(function () {
+  'use strict';
+  var deferredPrompt = null;
+  var btn = document.getElementById('installBtn');
+
+  window.addEventListener('beforeinstallprompt', function (e) {
+    e.preventDefault();
+    deferredPrompt = e;
+  });
+  window.addEventListener('appinstalled', function () {
+    deferredPrompt = null;
+  });
+
+  if (btn) {
+    var originalLabel = btn.textContent;
+    btn.addEventListener('click', function () {
+      if (!deferredPrompt) {
+        btn.textContent = '瀏覽器不支援，或已安裝過';
+        setTimeout(function () { btn.textContent = originalLabel; }, 2500);
+        return;
+      }
+      deferredPrompt.prompt();
+      deferredPrompt.userChoice.then(function () { deferredPrompt = null; });
+    });
+  }
+
+  if ('serviceWorker' in navigator) {
+    window.addEventListener('load', function () {
+      navigator.serviceWorker.register('service-worker.js').catch(function () {});
+    });
+  }
 })();
 </script>
 </body>

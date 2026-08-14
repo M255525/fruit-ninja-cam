@@ -4,6 +4,10 @@
 
 **GitHub Pages 上線網址**：<https://m255525.github.io/fruit-ninja-cam/>（2026-08-05 啟用，`master` 分支根目錄）。公開 repo：<https://github.com/M255525/fruit-ninja-cam>，含 `README.md`。因為主檔本來就叫 `index.html`，不像 `Rummikub` 需要額外的重新導向 stub，`git push` 後 GitHub Pages 會自動重新部署（通常一兩分鐘內生效）。
 
+## 加入主畫面（PWA，2026-08-14 新增）
+
+比照工作區 `expense-tracker-pwa` 的做法：`manifest.json`＋`icons/`（深色 `#0b1020` 背景、橘紅 `#FF6B4A`「切」字圖示）＋`service-worker.js`（network-first＋同源快取備援，跨網域的 MediaPipe CDN／模型檔請求一律略過不進快取，不需要每次改動升版 `CACHE_NAME`）。安裝按鈕（`#installBtn`）放在 `#start-screen`「改用滑鼠／觸控玩」下方，跟既有 `.btn secondary` 同款樣式；本專案沒有 `showToast`，安裝失敗走「暫時置換按鈕文字」的簡易 fallback。**測試時務必只被動檢查 DOM／SW 狀態，不要點擊任何按鈕**（見下方「⚠️ 用真實 Chrome 測試」一節，即使只是測 PWA 功能也要避免誤觸開始遊戲/攝影機）。已用 Playwright 實測 Chromium 觸發 `beforeinstallprompt`、SW 註冊成功，過程全程未點擊任何按鈕。
+
 ## 架構
 
 - **手部追蹤**：`@mediapipe/tasks-vision` HandLandmarker，經 jsdelivr CDN 以動態 `import()` 載入（版本 0.10.14），模型檔從 Google 官方 storage 載入。GPU delegate 失敗自動退回 CPU。**首次啟動需要網路**下載 wasm 與模型（約 10MB），之後靠瀏覽器快取。
