@@ -31,6 +31,7 @@
     font-size: 12px; font-weight: 700; color: #ffd27a;
     animation: marquee-scroll 30s linear infinite;
   }
+  #marqueeBar:hover #marqueeTrack{animation-play-state:paused}
   @keyframes marquee-scroll { from { transform: translateX(0); } to { transform: translateX(-50%); } }
   body.has-marquee #app { top: 26px; }
   /* 鏡像顯示攝影機畫面，object-fit: cover 滿版 */
