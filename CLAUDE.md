@@ -54,3 +54,6 @@
 - 真實體感效果需使用者以實體攝影機手動驗證。
 - **⚠️ 用真實 Chrome（非 headless sandbox）測試這個專案要格外小心**：2026-08-05 測試手機版面時，用座標／描述定位的點擊工具點「改用滑鼠／觸控玩」後畫面**仍然啟動了真實攝影機**並拍到使用者本人畫面（不是預期的滑鼠模式）——懷疑是那種點擊方式的座標／時機跟頁面初始化有 race condition，實際點到別的元素。**後來改用 `document.getElementById('mouse-btn').click()`（直接呼叫 DOM 元素的 `click()`，不靠座標）就再也沒有重現這個問題**，之後測試一律用這個方式進入滑鼠模式，點擊後先用 `evaluate` 讀 `window.__game.mode === 'mouse'` 確認過再繼續，不要邊點邊截圖。
 - **`window.__game._test.spawnWave()`**：直接呼叫一次生成邏輯、把新水果塞進 `G.fruits`，不用等 `requestAnimationFrame` 計時（背景分頁時 rAF 會被瀏覽器節流，`elapsed`/`spawnTimer` 幾乎不會走），驗證水果尺寸、生成邏輯這類不需要真的跑動畫迴圈的改動時優先用這個，比等待真實時間流逝可靠得多。
+
+## 操作手冊（2026-11-20 補上）
+`manual.html`：玩法、操作、排行榜、加入主畫面、常見狀況、完整創作者區塊（證照 7 筆、經歷 18 筆）、手冊訪客計數器 `page_id=m255525.<id>.manual`。入口在遊戲頁尾創作者那一行「📖 操作手冊」；已加進 `service-worker.js` 的 `SHELL_FILES` 並升 `CACHE_NAME`。使用警語入口在訪客計數器旁、首次造訪跳出一次（localStorage `mkw.<repo>.seen`）。

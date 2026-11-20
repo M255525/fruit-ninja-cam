@@ -1,0 +1,125 @@
+<!DOCTYPE html>
+<html lang="zh-Hant">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>操作手冊｜體感切水果</title>
+<style>
+  :root{
+    --accent:#d9480f; --accent-dark:#a63a0c; --bg:#f4f6fb; --card:#ffffff;
+    --border:#dbe0ea; --text:#1f2937; --muted:#6b7280; --danger:#dc2626;
+  }
+  *{box-sizing:border-box;}
+  body{
+    margin:0; font-family:"Microsoft JhengHei","PingFang TC",sans-serif;
+    background:var(--bg); color:var(--text); line-height:1.9;
+  }
+  header{
+    background:linear-gradient(135deg,var(--accent-dark),var(--accent));
+    color:#fff; padding:22px 24px;
+  }
+  header h1{font-size:1.3rem; margin:0;}
+  header p{margin:4px 0 0; font-size:.85rem; opacity:.85;}
+  header a{
+    display:inline-block; margin-top:12px; color:#fff; text-decoration:none;
+    background:rgba(255,255,255,.15); padding:7px 16px; border-radius:6px; font-size:.85rem; font-weight:600;
+  }
+  header a:hover{background:rgba(255,255,255,.28);}
+  main{max-width:860px; margin:0 auto; padding:24px 16px 60px;}
+  .card{
+    background:var(--card); border:1px solid var(--border); border-radius:10px;
+    padding:20px 24px; margin-bottom:18px;
+  }
+  h2{
+    font-size:1.1rem; color:var(--accent-dark); margin:0 0 12px;
+    padding-bottom:8px; border-bottom:2px solid #e5f5ef;
+  }
+  h3{font-size:.95rem; color:var(--accent-dark); margin:18px 0 6px;}
+  p{margin:8px 0;}
+  ul,ol{margin:8px 0; padding-left:24px;}
+  li{margin:4px 0;}
+  code{background:#e5f5ef; padding:1px 6px; border-radius:4px; font-size:.9em;}
+  .warning{
+    background:#fef2f2; border:1px solid #fca5a5; border-radius:8px;
+    padding:14px 18px; color:#991b1b; font-weight:600; margin-bottom:18px;
+  }
+  .warning small{display:block; font-weight:400; margin-top:6px; color:#b91c1c;}
+  .tip{
+    background:#e5f5ef; border-left:4px solid var(--accent); border-radius:0 8px 8px 0;
+    padding:10px 14px; font-size:.86rem; margin:10px 0;
+  }
+  .badge{
+    display:inline-block; background:#e5f5ef; color:var(--accent-dark);
+    border-radius:999px; padding:2px 12px; font-size:.78rem; font-weight:600; margin-right:6px;
+  }
+  .letter-grid{display:flex; flex-wrap:wrap; gap:10px; margin:10px 0;}
+  .letter-grid div{
+    flex:1; min-width:140px; background:#e5f5ef; border-radius:8px; padding:8px 12px; font-size:.85rem;
+  }
+  .letter-grid b{color:var(--accent-dark); font-size:1rem;}
+  footer{text-align:center; padding:18px; font-size:.78rem; color:var(--muted); line-height:1.8;}
+  footer a{color:var(--accent);}
+</style>
+</head>
+<body>
+<header>
+  <h1>📖 體感切水果・操作手冊</h1>
+  <p>對著鏡頭揮動食指，指尖就是刀鋒的體感遊戲</p>
+  <a href="index.html">← 回到遊戲</a>
+</header>
+<main>
+<div class="warning">⚠ 使用警語<small>體感模式會使用攝影機，影像只在你的瀏覽器裡辨識手部位置，不會錄影也不會上傳。揮手遊玩前請確認周圍沒有人、家具或易碎物品，身體不適請立即停止。</small></div>
+<div class="card"><h2>這是什麼遊戲？</h2><p>開啟攝影機後，畫面會辨識你的手，<b>食指指尖就是刀鋒</b>。快速劃過飛上來的水果就能切開得分；不想開鏡頭也可以用滑鼠或手指在螢幕上劃。</p></div>
+<div class="card"><h2>開始之前</h2><ul><li>使用有攝影機的電腦或手機，第一次會詢問是否允許使用攝影機，請按「允許」。</li><li>站或坐在離鏡頭約一公尺的位置，讓手掌完整入鏡；光線充足時辨識比較準。</li><li>電腦有兩顆以上鏡頭時，開始畫面會出現「📷 鏡頭」下拉選單，可以換成外接鏡頭。</li><li>第一次開始需要下載手部辨識模型，可能要等幾秒鐘。</li><li>不允許攝影機、沒有鏡頭或模型載入失敗時，會自動改成滑鼠／觸控模式；也可以直接按「改用滑鼠／觸控玩 🖱️」。</li></ul></div>
+<div class="card"><h2>玩法</h2><ul><li>手指<b>快速</b>劃過水果才算切開，手停在水果上不算。</li><li>一刀切到多顆水果有 <b>Combo 加分</b>。</li><li>小心 💣 <b>炸彈</b>：切到炸彈或漏接水果都會扣一顆 ❤️。一開始有 5 顆，過關回復 1 顆，❤️ 用完遊戲結束。</li><li>共 <b>3 關</b>：第 1 關 60 秒，第 2、3 關各 45 秒；越後面水果越多、炸彈越常出現。撐完三關就勝利。</li><li>可以雙手一起切。</li></ul></div>
+<div class="card"><h2>排行榜與成績</h2><ul><li>畫面上方顯示目前分數與最高分。</li><li>遊戲結束後，分數擠進前 5 名就能按「🏆 記錄成績」輸入名字，排行榜只存在這台裝置的瀏覽器裡。</li><li>「回主選單（可換鏡頭）」可以回到開始畫面換鏡頭或改用滑鼠玩。</li></ul></div>
+<div class="card"><h2>加入主畫面（可選）</h2><p>按開始畫面的「📲 加入主畫面」，就能像 App 一樣從桌面開啟。iPhone／iPad 請用 Safari 的「分享 → 加入主畫面」。</p></div>
+<div class="card"><h2>常見狀況</h2><ul><li><b>手揮了沒反應</b>：讓整隻手掌入鏡、離鏡頭遠一點，揮動速度再快一些；背光或太暗時辨識會變差。</li><li><b>畫面卡卡的</b>：關掉其他佔用鏡頭或很吃效能的程式，或改用滑鼠模式。</li><li><b>選錯鏡頭</b>：按「回主選單（可換鏡頭）」重新選擇。</li></ul></div>
+<div class="card" id="creator"><h2>創作者資料</h2>
+<div class="mk-creator">
+<style>.mk-creator{line-height:1.75}.mk-creator h3{margin:14px 0 6px;font-size:1.05em}.mk-creator table{width:100%;border-collapse:collapse;font-size:.95em}.mk-creator td,.mk-creator th{text-align:left;padding:5px 6px;border-bottom:1px solid rgba(128,128,128,.3);vertical-align:top}.mk-creator th{white-space:nowrap}.mk-creator ul{margin:4px 0;padding-left:1.4em}.mk-creator .mk-tags{display:flex;flex-wrap:wrap;gap:6px;margin:4px 0}.mk-creator .mk-tags span{border:1px solid rgba(128,128,128,.45);border-radius:999px;padding:1px 10px;font-size:.9em}</style>
+<p><b>Mark Tsai（蔡豐全）</b>為深耕創業輔導與數位轉型領域的顧問與講師，長期擔任勞動力發展署創業顧問與多項政府計畫的顧問、業師與評審委員，協助中小企業導入數據分析與 AI 工具、申請政府補助計畫，並具備跨境電商實務與講師培訓的豐富經驗。本工具是其推廣 AI 工具運用於教學與課程情境的作品之一。</p>
+<p>聯絡信箱：<a href="mailto:tsaimark@gmail.com">tsaimark@gmail.com</a></p>
+<h3>專長</h3>
+<div class="mk-tags"><span>銷售數據分析</span><span>AI 工具運用</span><span>政府補助計畫申請</span><span>創業</span><span>跨境電商</span></div>
+<h3>證照</h3>
+<table>
+<thead><tr><th>年度</th><th>證照</th></tr></thead>
+<tbody>
+<tr><td>2013</td><td>青創總會 創業輔導顧問師班</td></tr>
+<tr><td>2014</td><td>青創總會 網路行銷講師培訓班</td></tr>
+<tr><td>2016</td><td>阿里巴巴 P4P 認證講師</td></tr>
+<tr><td>2017</td><td>iCap 訓練規劃與評量職能基準課程</td></tr>
+<tr><td>2023</td><td>iCap 職能導向課程申請認證實作班</td></tr>
+<tr><td>2025</td><td>iPAS AI 應用規劃師－初級</td></tr>
+<tr><td>2025</td><td>新北市社會局 社區數位陪伴員</td></tr>
+</tbody>
+</table>
+<h3>經歷</h3>
+<ul>
+<li>勞動力發展署桃竹苗分署 創業顧問（2017－迄今）</li>
+<li>勞動力發展署（北北基）小型企業人力提升計畫 顧問（2019－迄今）</li>
+<li>勞動力發展署（桃竹苗）小型企業人力提升計畫 顧問（2019－迄今）</li>
+<li>農業部農業科技司「科技農企業雙軸轉型躍升發展」科技計畫 業師（2025－2026）</li>
+<li>勞動力發展署 企業人力資源提升計畫 審查委員（2024）</li>
+<li>勞動力發展署 職前訓練評鑑計畫 委員（2022）</li>
+<li>勞動部桃竹苗分署 桃竹苗區域運籌人力資源整合服務計畫 顧問（2022－2023）</li>
+<li>經濟部中小企業處 SBIR 海選專案 評審委員（2019－2024）</li>
+<li>勞動力發展署 數位學習課程清單審查會議 審查委員（2024－2025）</li>
+<li>輔仁大學創新跨領域學院 課務委員（2024－2025）</li>
+<li>台北市進出口商業同業公會 跨境電商生態村 顧問</li>
+<li>台灣網商協會 顧問</li>
+<li>中華職能開發策進會 顧問（2018－2020）</li>
+<li>新北市汽車美容人員職業工會 顧問（2023－迄今）</li>
+<li>中華網路行銷講師協會 顧問（2022－迄今）</li>
+<li>新北市社企電商基地 輔導顧問（2018－2020）</li>
+<li>阿里巴巴國際站平台 認證講師（2016）</li>
+<li>巨匠電腦 跨境電子商務班 講師（2016－2017）</li>
+</ul>
+</div>
+</div>
+<div class="card"><h2>授權與使用限制</h2><p>本工具僅供個人娛樂與教學示範使用，禁止未經授權公開發布、販售或商業化使用。</p>
+<p style="font-size:.85rem;color:var(--muted)">手冊訪客數 <img src="https://visitor-badge.laobi.icu/badge?page_id=m255525.fruitninjacam.manual" alt="訪客計數" style="vertical-align:middle"></p></div>
+</main>
+</body>
+</html>
