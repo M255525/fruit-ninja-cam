@@ -1,8 +1,10 @@
-# fruit-ninja-cam — 體感切水果
+# slice-fruit-cam（原 fruit-ninja-cam，2026-11-25 因商標改名） — 體感切水果
 
 單檔靜態網頁遊戲：`index.html` 即完整專案，無建置步驟、無 package.json。
 
-**GitHub Pages 上線網址**：<https://m255525.github.io/fruit-ninja-cam/>（2026-08-05 啟用，`master` 分支根目錄）。公開 repo：<https://github.com/M255525/fruit-ninja-cam>，含 `README.md`。因為主檔本來就叫 `index.html`，不像 `Rummikub` 需要額外的重新導向 stub，`git push` 後 GitHub Pages 會自動重新部署（通常一兩分鐘內生效）。
+**GitHub Pages 上線網址**：<https://m255525.github.io/slice-fruit-cam/>（2026-08-05 啟用，`master` 分支根目錄）。公開 repo：<https://github.com/M255525/slice-fruit-cam>，含 `README.md`。因為主檔本來就叫 `index.html`，不像 `Rummikub` 需要額外的重新導向 stub，`git push` 後 GitHub Pages 會自動重新部署（通常一兩分鐘內生效）。
+
+**2026-11-25 改名（商標考量）**：GitHub repo 與本機資料夾由 `fruit-ninja-cam` 改為 `slice-fruit-cam`。舊 git 網址會自動轉址，但**舊的 GitHub Pages 網址已失效**（Pages 不轉址）。訪客計數器 `page_id=m255525.fruitninjacam`、localStorage key `mkw.fruit-ninja-cam.seen`／`fnc-*` **刻意不改**（改了累計次數與紀錄會歸零），使用者畫面上看不到。service worker 啟動時會順便清掉舊快取 `fruit-ninja-cam-shell-*`。其他體感專案註解裡的 `fruit-ninja-cam` 指的就是本專案。
 
 ## 加入主畫面（PWA，2026-08-14 新增）
 
@@ -48,7 +50,7 @@
 
 ## 測試
 
-- 預覽：Preview MCP `preview_start`（名稱 `fruit-ninja-cam`，port 8767），開 `http://localhost:8767/index.html`。
+- 預覽：Preview MCP `preview_start`（名稱 `slice-fruit-cam`，port 8767），開 `http://localhost:8767/index.html`。
 - 自動化測試走**滑鼠模式**（headless 無鏡頭）：點「改用滑鼠／觸控玩」，對 canvas 派發 `pointermove` 事件模擬揮砍。
 - `window.__game` 暴露完整遊戲狀態（`state`、`mode`、`score`、`lives`、`fruits[]`…）供斷言；也可直接呼叫內部不可及時用它讀取水果座標來瞄準。
 - 真實體感效果需使用者以實體攝影機手動驗證。
